@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer components {
   .background-animate {
     background-size: 400%;
@@ -20,4 +21,8 @@
       background-position: 100% 100%;
     }
   }
+}
+
+html {
+  background-color: black;
 }
