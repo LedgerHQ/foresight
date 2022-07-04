@@ -1,6 +1,6 @@
 scalaVersion := "2.13.8"
 
-val AkkaVersion      = "2.6.18"
+val AkkaVersion      = "2.6.19"
 val AkkaHttpVersion  = "10.2.9"
 val AkkaSlickVersion = "3.0.4"
 
