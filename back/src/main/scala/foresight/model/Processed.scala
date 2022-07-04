@@ -25,14 +25,14 @@ object Processed {
       blockHeight: Option[Height],
       sender: String,
       receiver: String,
-      value: BigInt,
-      gas: BigInt,
-      gasPrice: Option[BigInt],
-      maxFeePerGas: Option[BigInt],
-      maxPriorityFeePerGas: Option[BigInt],
+      value: BigDecimal,
+      gas: BigDecimal,
+      gasPrice: Option[BigDecimal],
+      maxFeePerGas: Option[BigDecimal],
+      maxPriorityFeePerGas: Option[BigDecimal],
       input: String,
-      nonce: BigInt,
-      transactionIndex: Option[BigInt]
+      nonce: BigDecimal,
+      transactionIndex: Option[BigDecimal]
   )
 
   object Transaction {
@@ -46,17 +46,17 @@ object Processed {
         droppedAt = None,
         blockHash = clientTx.blockHash,
         blockHeight =
-          clientTx.blockNumber.map(_.toBigInt.toInt).map(Height.apply),
+          clientTx.blockNumber.map(_.toBigDecimal.toInt).map(Height.apply),
         sender = clientTx.from,
         receiver = clientTx.to.getOrElse("contract creation"),
-        value = clientTx.value.toBigInt,
-        gas = clientTx.gas.toBigInt,
-        gasPrice = clientTx.gasPrice.map(_.toBigInt),
-        maxFeePerGas = clientTx.maxFeePerGas.map(_.toBigInt),
-        maxPriorityFeePerGas = clientTx.maxPriorityFeePerGas.map(_.toBigInt),
+        value = clientTx.value.toBigDecimal,
+        gas = clientTx.gas.toBigDecimal,
+        gasPrice = clientTx.gasPrice.map(_.toBigDecimal),
+        maxFeePerGas = clientTx.maxFeePerGas.map(_.toBigDecimal),
+        maxPriorityFeePerGas = clientTx.maxPriorityFeePerGas.map(_.toBigDecimal),
         input = clientTx.input,
-        nonce = clientTx.nonce.toBigInt,
-        transactionIndex = clientTx.transactionIndex.map(_.toBigInt),
+        nonce = clientTx.nonce.toBigDecimal,
+        transactionIndex = clientTx.transactionIndex.map(_.toBigDecimal),
         transactionType =
           if (clientTx.maxFeePerGas.isDefined) TransactionType.EIP1559
           else TransactionType.Legacy

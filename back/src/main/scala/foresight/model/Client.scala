@@ -33,5 +33,5 @@ object JsonProtocol extends DefaultJsonProtocol {
 }
 
 case class HexNumber(value: String) extends AnyVal {
-  def toBigInt: BigInt = if (value == "0x") 0 else BigInt(value.replace("0x", ""), 16)
+  def toBigDecimal: BigDecimal = if (value == "0x") 0 else BigDecimal(BigInt(value.replace("0x", ""), 16))
 }

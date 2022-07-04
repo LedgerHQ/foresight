@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS raw_blocks (
 
 CREATE TABLE IF NOT EXISTS raw_transactions (
   hash text PRIMARY KEY,
-  block_height NUMERIC(30,0) REFERENCES raw_blocks(height),
+  block_height NUMERIC(30,0),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   mined_at TIMESTAMP WITH TIME ZONE,
   dropped_at TIMESTAMP WITH TIME ZONE,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS raw_transactions (
 CREATE TABLE IF NOT EXISTS processed_transactions (
   hash TEXT,
   type TEXT,
-  block_height NUMERIC(30,0) REFERENCES raw_blocks(height),
+  block_height NUMERIC(30,0),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   mined_at TIMESTAMP WITH TIME ZONE,
   dropped_at TIMESTAMP WITH TIME ZONE,
