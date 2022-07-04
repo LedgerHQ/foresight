@@ -18,7 +18,6 @@ import spray.json._
 object Indexer {
 
   def main(args: Array[String]): Unit = {
-    toto
     val dbConfig      = DB.Config.fromEnv
     val fetcherConfig = Fetcher.Config.fromEnv
     // val dbConfig =
