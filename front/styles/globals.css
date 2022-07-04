@@ -1,19 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-html,
-body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-}
+@layer components {
+  .background-animate {
+    background-size: 400%;
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+    -webkit-animation: AnimationName 3s ease infinite;
+    -moz-animation: AnimationName 3s ease infinite;
+    animation: AnimationName 3s ease infinite;
+  }
 
-* {
-  box-sizing: border-box;
+  @keyframes AnimationName {
+    0%,
+    100% {
+      background-position: 0% 0%;
+    }
+
+    50% {
+      background-position: 100% 100%;
+    }
+  }
 }

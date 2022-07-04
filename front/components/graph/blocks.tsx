@@ -1,11 +1,19 @@
+import { useEffect } from "react";
+import { useMemPool } from "../context/state";
+
 const sizeBlock = (): number => {
   return Math.floor(Math.random() * 3);
 };
 
 const Blocks = () => {
+  const { selectedMemPool } = useMemPool();
+
+  useEffect(() => {}, [selectedMemPool]);
+
   return (
     <>
       <div>
+        <div className="text-xl">mempool numero {selectedMemPool}</div>
         <div className="grid overflow-hidden auto-cols-auto auto-rows-auto gap-4 grid-flow-row p-4  rotate-180">
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16].map(
             (b, index) => (

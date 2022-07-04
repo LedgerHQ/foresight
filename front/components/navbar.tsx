@@ -7,7 +7,7 @@ const NavBar = () => {
             className="text-gray-100 text-base xl:text-3xl no-underline hover:no-underline font-bold"
             href="#"
           >
-            <i className="fas fa-moon text-blue-400 pr-3"></i> Forseight
+            <i className="fas fa-moon text-blue-400 pr-3"></i> Foresight
           </a>
         </div>
       </div>

@@ -2,16 +2,16 @@ import Mempool, { MempoolData } from "./mempool";
 
 const Mempools = () => {
   const fillingPool = {
-    id: 1,
+    id: "1",
     status: "pending",
     size: 24,
     transactionNumber: 2351,
   } as MempoolData;
 
   const filledMempools = [
-    { id: 123432453, status: "complete", size: 87, transactionNumber: 2351 },
-    { id: 123432453, status: "complete", size: 87, transactionNumber: 2351 },
-    { id: 123432453, status: "complete", size: 87, transactionNumber: 2351 },
+    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
+    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
+    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
   ] as MempoolData[];
 
   return (
@@ -20,8 +20,8 @@ const Mempools = () => {
         <Mempool mempollData={fillingPool} />
       </div>
       <div className="flex flex-row gap-4 flex-1 pl-4 py-8">
-        {filledMempools.map((m) => (
-          <Mempool mempollData={m} />
+        {filledMempools.map((m, index) => (
+          <Mempool key={index} mempollData={m} />
         ))}
       </div>
     </div>
