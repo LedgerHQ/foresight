@@ -10,6 +10,21 @@ interface Props {
   mempollData: MempoolData;
 }
 
+const LoadingState = (mempollData: MempoolData) => {
+  const { status, size } = mempollData;
+
+  return (
+    <div
+      className={`absolute bottom-0 left-0 ${
+        status === "complete"
+          ? "bg-gradient-to-t from-[#8CD37E] bg-[#6DC85B]"
+          : "bg-gradient-to-tr from-base via-indigo-400 to-[#6DC85B] background-animate"
+      }  w-full`}
+      style={{ height: `${size}%` }}
+    ></div>
+  );
+};
+
 const MemPool = ({ mempollData }: Props) => {
   const { status, size, transactionNumber, id } = mempollData;
   const { setMemPoolCode } = useMemPool();
@@ -31,14 +46,7 @@ const MemPool = ({ mempollData }: Props) => {
             {transactionNumber} transaction
           </div>
         </div>
-        <div
-          className={`absolute bottom-0 left-0 ${
-            status === "complete"
-              ? "bg-gradient-to-t from-[#8CD37E] bg-[#6DC85B]"
-              : "bg-gradient-to-tr from-base via-indigo-400 to-[#6DC85B] background-animate"
-          }  w-full`}
-          style={{ height: `${mempollData.size}%` }}
-        ></div>
+        <LoadingState {...mempollData} />
       </div>
     </div>
   );

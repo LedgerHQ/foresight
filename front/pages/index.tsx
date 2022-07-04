@@ -1,7 +1,11 @@
 import type { NextPage } from "next";
 import Blocks from "../components/graph/blocks";
 import Mempools from "../components/graph/mempools";
+import MemPoolTreemap from "../components/graph/memPoolTreeMap";
+import memPoolTreemap from "../components/graph/memPoolTreeMap";
+import Treemap from "../components/graph/Treemap";
 import MyTransaction from "../components/MyTransaction";
+import data from "../data/data";
 
 const Home: NextPage = () => {
   return (
@@ -11,11 +15,9 @@ const Home: NextPage = () => {
         <Mempools />
         <hr className="border-b-2 border-gray-600 my-8 mx-4" />
 
-        <div className="flex flex-row">
-          <Blocks />
-          <div className="">
-            <h3 className="h3">Salut la zone</h3>
-          </div>
+        <div className="flex flex-row justify-center py-8">
+          <Treemap data={data} height={400} width={600} />
+          <MemPoolTreemap height={400} width={600} />
         </div>
       </div>
     </div>

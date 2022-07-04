@@ -15,12 +15,16 @@ type memPoolContextType = {
   llapi?: LedgerLiveApi;
   selectedMemPool: string | null;
   setMemPoolCode: Dispatch<SetStateAction<string | null>>;
+  selectedTransaction: string | null;
+  setTransaction: Dispatch<SetStateAction<string | null>>;
 };
 
 const MemPoolContextDefaultValues: memPoolContextType = {
   llapi: undefined,
   selectedMemPool: null,
   setMemPoolCode: () => {},
+  selectedTransaction: null,
+  setTransaction: () => {},
 };
 
 const MemPoolContext = createContext<memPoolContextType>(
@@ -39,28 +43,23 @@ export function MemPoolProvider({ children }: Props) {
   const [loading, setLoading] = useState(false);
   const [llapi, setllapi] = useState<LedgerLiveApi>();
   const [selectedMemPool, setMemPoolCode] = useState<string | null>(null);
+  const [selectedTransaction, setTransaction] = useState<string | null>(null);
 
   // Client-side-only code
   useEffect(() => {
     const llapi = new LedgerLiveApi(new WindowMessageTransport());
     llapi.connect();
-    console.log("contect", llapi);
     setllapi(llapi);
     setLoading(false);
   }, []);
-
-  const setSession = (access_token: string) => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("token", access_token);
-    }
-  };
 
   const value = {
     llapi,
     MemPoolLoading: loading,
     selectedMemPool,
     setMemPoolCode,
-    setSession,
+    setTransaction,
+    selectedTransaction,
   };
 
   return (
