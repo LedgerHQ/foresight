@@ -6,7 +6,7 @@ const Layout = ({ children }: { children: JSX.Element }) => {
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main className="bg-black text-white">{children}</main>
       {/* <Footer /> */}
     </>
   );

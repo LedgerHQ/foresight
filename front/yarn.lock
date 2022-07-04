@@ -56,6 +56,14 @@
   "resolved" "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz"
   "version" "1.2.1"
 
+"@ledgerhq/live-app-sdk@^0.6.1":
+  "integrity" "sha512-pGSNsTIg/K3P5xrj9n50Lmb6/sILh/7XrZjMsJA5HDTOYfbhWuYNOXtmDgaSjEO5vkI2YrU2I49VoE2XbwpEwg=="
+  "resolved" "https://registry.npmjs.org/@ledgerhq/live-app-sdk/-/live-app-sdk-0.6.1.tgz"
+  "version" "0.6.1"
+  dependencies:
+    "bignumber.js" "^9.0.2"
+    "json-rpc-2.0" "^1.0.0"
+
 "@next/env@12.2.0":
   "integrity" "sha512-/FCkDpL/8SodJEXvx/DYNlOD5ijTtkozf4PPulYPtkPOJaMPpBSOkzmsta4fnrnbdH6eZjbwbiXFdr6gSQCV4w=="
   "resolved" "https://registry.npmjs.org/@next/env/-/env-12.2.0.tgz"
@@ -330,6 +338,11 @@
   "integrity" "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="
   "resolved" "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"
   "version" "1.0.2"
+
+"bignumber.js@^9.0.2":
+  "integrity" "sha512-GAcQvbpsM0pUb0zw1EI0KhQEZ+lRwR5fYaAp3vPOYuP7aDvGy6cVN6XHLauvF8SOga2y0dcLcjt3iQDTSEliyw=="
+  "resolved" "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.0.2.tgz"
+  "version" "9.0.2"
 
 "binary-extensions@^2.0.0":
   "integrity" "sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA=="
@@ -1182,6 +1195,11 @@
   "version" "4.1.0"
   dependencies:
     "argparse" "^2.0.1"
+
+"json-rpc-2.0@^1.0.0":
+  "integrity" "sha512-pA85D9LG4B+b8njdb8DzktltNfGPcxGJJydEg6jRqePfwhK008lRdbX7bco6aokfw9oDFw7fEe+LRxxXwP11HA=="
+  "resolved" "https://registry.npmjs.org/json-rpc-2.0/-/json-rpc-2.0-1.3.0.tgz"
+  "version" "1.3.0"
 
 "json-schema-traverse@^0.4.1":
   "integrity" "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg=="
