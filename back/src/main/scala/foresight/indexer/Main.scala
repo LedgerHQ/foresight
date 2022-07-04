@@ -1,3 +1,5 @@
+package foresight.indexer
+
 import akka._
 import akka.actor.ActorSystem
 import akka.stream.OverflowStrategy
@@ -16,7 +18,6 @@ import spray.json._
 object Indexer {
 
   def main(args: Array[String]): Unit = {
-
     val dbConfig      = DB.Config.fromEnv
     val fetcherConfig = Fetcher.Config.fromEnv
     // val dbConfig =

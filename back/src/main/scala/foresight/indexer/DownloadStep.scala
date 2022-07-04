@@ -30,7 +30,7 @@ final case class DownloadStep(
   override def index(from: Height, to: Height): Future[Done] =
     Source((from.value to to.value).map(Height.apply))
       .via(fetcher.download)
-      .via(rawInserter.insert)
+      .via(rawInserter.insertBlock)
       .run()
 
 }
