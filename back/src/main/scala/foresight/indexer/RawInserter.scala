@@ -109,7 +109,7 @@ final case class RawInserter(session: SlickSession) {
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
 
   def insertTransaction() =
-    Flow[Raw.PendingTransaction].via(Slick.flow(insertRawTransactionQuery))
+    Flow[Raw.PendingTransaction].via(Slick.flow(insertPendingTransaction))
 
   def topHeight: Future[Option[Height]] =
     session.db.run(topHeightQuery)
