@@ -63,7 +63,7 @@ export default function MemPoolTreemap({ width, height }: any) {
 
     const root = d3
       .hierarchy(data)
-      .sum((d) => d.value)
+      .sum((d: any) => d.value)
       .sort((a: any, b: any) => b.value - a.value);
 
     const treemapRoot = d3.treemap().size([width, height]).padding(1)(root);

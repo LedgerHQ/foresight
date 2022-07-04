@@ -41,13 +41,13 @@ export default function Treemap({ data, width, height }: any) {
       .attr("x", 3)
       .attr("y", fontSize);
 
-    d3.selectAll("rect").on("click", function (clickedTruc) {
-      console.log(this.parentNode.parentNode, clickedTruc);
+    // d3.selectAll("rect").on("click", function (clickedTruc) {
+    //   console.log(this.parentNode.parentNode, clickedTruc);
 
-      // var title =
-      //   this.parentNode.parentNode.getElementsByTagName("title")[0]
-      //     .childNodes[0];
-    });
+    //   // var title =
+    //   //   this.parentNode.parentNode.getElementsByTagName("title")[0]
+    //   //     .childNodes[0];
+    // });
   }
 
   useEffect(() => {
