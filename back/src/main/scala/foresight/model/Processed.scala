@@ -62,5 +62,31 @@ object Processed {
           else TransactionType.Legacy
       )
     }
+    def fromMined(raw: Raw.MinedTransaction): Transaction = {
+      import JsonProtocol._
+      val clientTx = raw.data.convertTo[ClientTransaction]
+      Transaction(
+        hash = clientTx.hash,
+        createdAt = raw.minedAt,
+        minedAt = Some(raw.minedAt),
+        droppedAt = None,
+        blockHash = clientTx.blockHash,
+        blockHeight =
+          clientTx.blockNumber.map(_.toBigDecimal.toInt).map(Height.apply),
+        sender = clientTx.from,
+        receiver = clientTx.to.getOrElse("contract creation"),
+        value = clientTx.value.toBigDecimal,
+        gas = clientTx.gas.toBigDecimal,
+        gasPrice = clientTx.gasPrice.map(_.toBigDecimal),
+        maxFeePerGas = clientTx.maxFeePerGas.map(_.toBigDecimal),
+        maxPriorityFeePerGas = clientTx.maxPriorityFeePerGas.map(_.toBigDecimal),
+        input = clientTx.input,
+        nonce = clientTx.nonce.toBigDecimal,
+        transactionIndex = clientTx.transactionIndex.map(_.toBigDecimal),
+        transactionType =
+          if (clientTx.maxFeePerGas.isDefined) TransactionType.EIP1559
+          else TransactionType.Legacy
+      )
+    }
   }
 }

@@ -78,6 +78,53 @@ final case class RawInserter(session: SlickSession) {
           SET block_height = ${height.value}, mined_at = ${raw.minedAt.value}
           WHERE hash = ${raw.hash.value}"""
 
+  def updateMinedProcessedTransactionQuery(
+      height: Height
+  )(raw: Raw.MinedTransaction) = {
+    val processed = Processed.Transaction.fromMined(raw)
+    sqlu"""INSERT INTO processed_transactions(
+          hash,
+          type,
+          created_at,
+          mined_at,
+          block_height,
+          block_hash,
+          sender,
+          receiver,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          nonce,
+          transaction_index,
+          input,
+          value
+        ) VALUES (
+          ${processed.hash},
+          ${processed.transactionType.value},
+          ${processed.createdAt},
+          ${processed.minedAt},
+          ${height.value},
+          ${processed.blockHash},
+          ${processed.sender},
+          ${processed.receiver},
+          ${processed.gas},
+          ${processed.gasPrice},
+          ${processed.maxFeePerGas},
+          ${processed.maxPriorityFeePerGas},
+          ${processed.nonce},
+          ${processed.transactionIndex},
+          ${processed.value}
+        )
+        ON CONFLICT (hash)
+        DO UPDATE
+            SET block_hash = ${processed.blockHash},
+                mined_at = ${processed.minedAt},
+                block_height = ${processed.blockHeight.map(_.value)}
+            WHERE hash = ${processed.hash}
+        """
+  }
+
   def updateDroppedTransactionQuery(raw: Raw.DroppedTransaction) =
     sqlu"""UPDATE raw_transactions
           SET dropped_at = ${raw.droppedAt.value}
@@ -98,7 +145,11 @@ final case class RawInserter(session: SlickSession) {
     val header = insertHeaderQuery(raw)
     val transactions =
       raw.transactions.map(updateMinedTransactionQuery(raw.height))
-    DBIO.fold(Seq(header) ++ transactions, 0)(_ + _).transactionally
+    val processedTransactions =
+      raw.transactions.map(updateMinedProcessedTransactionQuery(raw.height))
+    DBIO
+      .fold(Seq(header) ++ transactions ++ processedTransactions, 0)(_ + _)
+      .transactionally
   }
 
   def topHeightQuery =
