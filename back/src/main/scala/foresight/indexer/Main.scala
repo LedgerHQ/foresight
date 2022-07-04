@@ -8,6 +8,7 @@ import akka.stream.scaladsl._
 import akka.util.ByteString
 import common.indexer._
 import foresight.indexer._
+import foresight.indexer.server.WsServer
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
@@ -28,6 +29,8 @@ object Indexer {
     // )
 
     implicit val system = ActorSystem()
+
+    new WsServer().wsServer
     try {
       implicit val session = DB.session(dbConfig)
       system.registerOnTermination(session.close())
@@ -57,5 +60,6 @@ object Indexer {
     } finally {
       Await.result(system.terminate(), 3.seconds)
     }
+
   }
 }

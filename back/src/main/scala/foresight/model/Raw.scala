@@ -12,7 +12,7 @@ object Raw {
       hash: String,
       blockHeight: Height,
       minedAt: Timestamp,
-      data: JsValue
+      data: JsObject
   )
   object MinedTransaction {
     def fromJson(
@@ -31,7 +31,7 @@ object Raw {
   final case class PendingTransaction(
       hash: String,
       createdAt: Timestamp,
-      data: JsValue
+      data: JsObject
   )
   object PendingTransaction {
     def fromJson(
