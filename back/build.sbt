@@ -14,3 +14,4 @@ libraryDependencies ++= Seq(
   "ch.qos.logback"      % "logback-classic"           % "1.0.9",
   "org.postgresql"      % "postgresql"                % "42.4.0"
 )
+mainClass in (Compile, run) := Some("foresight.indexer.Indexer")
