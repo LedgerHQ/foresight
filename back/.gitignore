@@ -29,3 +29,7 @@ site/explorer-eth-openapi.yaml
 .vscode
 */metals.sbt
 data
+target
+project/*
+!project/build.properties
+!project/plugins.sbt
