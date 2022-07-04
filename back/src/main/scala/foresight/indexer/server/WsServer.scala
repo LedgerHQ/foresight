@@ -11,7 +11,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import scala.concurrent.duration.DurationInt
 
-class WsServer(implicit system: ActorSystem) {
+class WsServer()(implicit system: ActorSystem) {
 
   val greeterWebSocketService =
     Flow.fromSinkAndSource(
