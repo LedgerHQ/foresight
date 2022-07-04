@@ -5,11 +5,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.ws._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl._
 import common.Env
 import common.model._
 import foresight.model._
+
 import scala.concurrent._
 import scala.util._
 import spray.json._
@@ -23,6 +25,23 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
 
   val nodeConnection =
     http.cachedHostConnectionPool[NotUsed](config.host, config.port)
+
+  def subscribe(topic: String) = {
+    val req = JRPC.Request(
+      id = 0,
+      method = "eth_subscribe",
+      params = Vector(JsString(topic))
+    )
+
+    val wssFlow = http.webSocketClientFlow(WebSocketRequest("wss://ethereum-wss.coin.ledger-stg.com"))
+
+    Source
+      .single(TextMessage(req.encode.toString))
+      .concatMat(Source.maybe)(Keep.right)
+      .viaMat(wssFlow)(Keep.right)
+      .map(_.asTextMessage.getStrictText) // .parseJson.asJsObject)
+      // .map(JRPC.Response.decode)
+  }
 
   def getBlockRequest(block: Height): HttpRequest =
     HttpRequest(uri = s"${config.path}/blocks/${block.value}")

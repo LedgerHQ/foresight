@@ -7,8 +7,10 @@ import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import common.indexer._
+import common.model.JRPC
 import foresight.indexer._
 import foresight.indexer.server.WsServer
+
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
@@ -16,9 +18,18 @@ import slick.jdbc.PositionedParameters
 import slick.jdbc.SetParameter
 import spray.json._
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 object Indexer {
 
   def main(args: Array[String]): Unit = {
+    implicit val system: ActorSystem = ActorSystem()
+
+    val fetcher = Fetcher(Fetcher.Config("", 80, "", 4))
+    val incoming = Sink.foreach[String](println)
+    fetcher.subscribe("newPendingTransactions").toMat(incoming)(Keep.both).run()
+
+    /*
     val dbConfig      = DB.Config.fromEnv
     val fetcherConfig = Fetcher.Config.fromEnv
     // val dbConfig =
@@ -60,6 +71,6 @@ object Indexer {
     } finally {
       Await.result(system.terminate(), 3.seconds)
     }
-
+    */
   }
 }
