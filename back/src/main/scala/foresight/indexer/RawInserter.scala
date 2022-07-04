@@ -27,7 +27,7 @@ final case class RawInserter(session: SlickSession) {
         ${raw.hash.value},
         ${raw.createdAt.value},
         ${raw.data.toString()}::jsonb
-        )"""
+        ) ON CONFLICT (hash) DO NOTHING"""
 
   def insertProcessedTransactionQuery(raw: Raw.PendingTransaction) = {
     val processed = Processed.Transaction.fromPending(raw)
@@ -61,6 +61,7 @@ final case class RawInserter(session: SlickSession) {
           ${processed.maxPriorityFeePerGas},
           ${processed.nonce},
           ${processed.transactionIndex},
+          ${processed.input},
           ${processed.value}
         )"""
   }
@@ -114,6 +115,7 @@ final case class RawInserter(session: SlickSession) {
           ${processed.maxPriorityFeePerGas},
           ${processed.nonce},
           ${processed.transactionIndex},
+          ${processed.input},
           ${processed.value}
         )
         ON CONFLICT (hash)

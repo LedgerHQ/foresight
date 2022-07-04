@@ -10,67 +10,49 @@ import common.indexer._
 import common.model.JRPC
 import foresight.indexer._
 import foresight.indexer.server.WsServer
-
+import foresight.model.Raw
+import java.sql.Timestamp
+import java.time.Instant
 import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util._
 import slick.jdbc.PositionedParameters
 import slick.jdbc.SetParameter
 import spray.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 object Indexer {
 
   def main(args: Array[String]): Unit = {
-    implicit val system: ActorSystem = ActorSystem()
-
-    val fetcher = Fetcher(Fetcher.Config("", 80, "", 4))
-    val incoming = Sink.foreach[String](println)
-    fetcher.subscribe("newPendingTransactions").toMat(incoming)(Keep.both).run()
-
-    /*
     val dbConfig      = DB.Config.fromEnv
     val fetcherConfig = Fetcher.Config.fromEnv
-    // val dbConfig =
-    //  DB.Config("localhost", 5432, "foresight", "username", "password")
-    // val fetcherConfig = Fetcher.Config(
-    //  endpoint = "51.210.220.222",
-    //  concurrency = 40
-    // )
 
-    implicit val system = ActorSystem()
+    implicit val system: ActorSystem = ActorSystem()
 
-    new WsServer().wsServer
-    try {
-      implicit val session = DB.session(dbConfig)
-      system.registerOnTermination(session.close())
-      Await.result(DB.initSchema(session, "schema.sql"), 30.seconds)
+    implicit val session = DB.session(dbConfig)
+    system.registerOnTermination(session.close())
+    // Await.result(DB.initSchema(session, "schema.sql"), 30.seconds)
 
-      val rawInserter = RawInserter(session)
+    val rawInserter = RawInserter(session)
 
-      val fetcher = Fetcher(fetcherConfig)
+    val fetcher = Fetcher(fetcherConfig)
 
-      val steps = List(
-        DownloadStep(fetcher, rawInserter)
+    val (upgraded, done) = fetcher.newPendingTransactions
+      .via(fetcher.getTx)
+      .map(res =>
+        Raw.PendingTransaction
+          .fromJson(
+            res.result.asJsObject,
+            Timestamp.from(Instant.now())
+          )
       )
+      .collect { case Success(pending) =>
+        pending
+      }
+      .via(rawInserter.insertTransaction)
+      .log("pending")
+      .toMat(Sink.ignore)(Keep.both)
+      .run()
 
-      val stream = Source
-        .tick(50.millis, 5.seconds, ())
-        .buffer(1, OverflowStrategy.backpressure)
-        .mapAsync(1) { _ =>
-          steps.foldLeft(Future.successful(Done.done())) { (prev, step) =>
-            prev.flatMap(_ => step.run)(system.dispatcher)
-          }
-        }
-
-      Await.result(stream.run(), Duration.Inf)
-    } catch {
-      case e: Throwable =>
-        system.log.error(e.getMessage())
-    } finally {
-      Await.result(system.terminate(), 3.seconds)
-    }
-    */
   }
 }
