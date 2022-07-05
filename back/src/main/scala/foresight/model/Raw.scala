@@ -86,4 +86,6 @@ object Raw {
           Try(throw DeserializationException("Fields are missing"))
       }
   }
+
+  case class BaseFeeByHeight(height: Height, baseFee: BigDecimal)
 }

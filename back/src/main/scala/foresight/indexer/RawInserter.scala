@@ -1,10 +1,13 @@
 package foresight.indexer
 
+import akka.NotUsed
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl.Flow
 import common.model._
+import foresight.model.Raw.BaseFeeByHeight
 import foresight.model._
+
 import scala.concurrent._
 import slick.jdbc.GetResult
 
@@ -97,6 +100,14 @@ final case class RawInserter(session: SlickSession) {
         """
   }
 
+  def updateBaseFeeQuery(fee: BaseFeeByHeight) = {
+    sqlu"""
+          UPDATE processed_transactions
+          SET base_fee = ${fee.baseFee}
+          WHERE block_height = ${fee.height.value}
+        """
+  }
+
   def updateDroppedTransactionQuery(raw: Raw.DroppedTransaction) =
     sqlu"""UPDATE raw_transactions
           SET dropped_at = ${raw.droppedAt.value}
@@ -181,6 +192,8 @@ final case class RawInserter(session: SlickSession) {
     session.db.run(getProcessedTransactionQuery).map(_.toList)
 
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
+
+  def updateBaseFee(): Flow[BaseFeeByHeight, Int, NotUsed] = Flow[BaseFeeByHeight].via(Slick.flow(updateBaseFeeQuery))
 
   def insertTransaction() =
     Flow[Raw.PendingTransaction].via(Slick.flow(insertPendingTransaction))
