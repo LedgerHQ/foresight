@@ -154,6 +154,58 @@ final case class RawInserter(session: SlickSession) {
       .transactionally
   }
 
+  def getProcessedTransactionByBlockHeightQuery(blockHeight: Int) =
+    sql"""SELECT 
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          receiver,
+          transaction_index,
+          value,
+          status
+         FROM 
+            processed_transactions
+        WHERE 
+            block_height = $blockHeight
+       """.as(
+      GetResult(r =>
+        Processed.Transaction(
+          hash = r.nextString(),
+          transactionType = r.nextString() match {
+            case "Legacy" => Processed.TransactionType.Legacy
+            case _        => Processed.TransactionType.EIP1559
+          },
+          blockHeight = r.nextIntOption().map(Height(_)),
+          createdAt = r.nextTimestamp(),
+          minedAt = r.nextTimestampOption(),
+          droppedAt = r.nextTimestampOption(),
+          blockHash = r.nextStringOption(),
+          sender = r.nextString(),
+          receiver = r.nextString(),
+          value = r.nextBigDecimal(),
+          gas = r.nextBigDecimal(),
+          gasPrice = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxFeePerGas = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxPriorityFeePerGas =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          input = r.nextString(),
+          nonce = r.nextBigDecimal(),
+          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal)
+        )
+      )
+    )
+
   def getProcessedTransactionQuery =
     sql"""SELECT 
          hash,
@@ -211,6 +263,13 @@ final case class RawInserter(session: SlickSession) {
 
   def getProcessedTransaction: Future[List[Processed.Transaction]] =
     session.db.run(getProcessedTransactionQuery).map(_.toList)
+
+  def getProcessedTransactionByBockHeight(
+      blockHeight: Int
+  ): Future[List[Processed.Transaction]] =
+    session.db
+      .run(getProcessedTransactionByBlockHeightQuery(blockHeight))
+      .map(_.toList)
 
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
 
