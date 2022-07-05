@@ -32,24 +32,33 @@ import scala.util.Success
 class HttpServer(
     rawInserter: RawInserter
 )(implicit system: ActorSystem) {
+  private val cors = new CORSHandler {}
 
   val route = {
     pathPrefix("processed-transactions" / IntNumber) { blockHeight =>
-      onComplete(
-        rawInserter
-          .getProcessedTransactionByBockHeight(blockHeight)
-      ) {
-        case Success(value) => complete(value)
-        case Failure(ex)    => complete(s"An error occurred: ${ex.getMessage}")
-      }
-    } ~
-      path("mempool") {
+      options {
         onComplete(
-          rawInserter.getMemPool
+          rawInserter
+            .getProcessedTransactionByBockHeight(blockHeight)
         ) {
           case Success(value) => complete(value)
           case Failure(ex) => complete(s"An error occurred: ${ex.getMessage}")
         }
+      }
+    } ~
+      path("mempool") {
+        options {
+          cors.corsHandler(complete(StatusCodes.OK))
+        } ~ get {
+          onComplete(
+            rawInserter.getMemPool
+          ) {
+            case Success(value) => cors.corsHandler(complete(value))
+            case Failure(ex) =>
+              cors.corsHandler(complete(s"An error occurred: ${ex.getMessage}"))
+          }
+        }
+
       }
   }
 
