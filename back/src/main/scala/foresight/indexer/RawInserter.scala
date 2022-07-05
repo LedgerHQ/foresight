@@ -173,7 +173,8 @@ final case class RawInserter(session: SlickSession) {
           receiver,
           transaction_index,
           value,
-          status
+          status,
+          tip
          FROM 
             processed_transactions
         WHERE 
@@ -202,7 +203,8 @@ final case class RawInserter(session: SlickSession) {
             r.nextStringOption().map(HexNumber(_).toBigDecimal),
           input = r.nextString(),
           nonce = r.nextBigDecimal(),
-          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal)
+          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          tip = r.nextBigDecimalOption()
         )
       )
     )

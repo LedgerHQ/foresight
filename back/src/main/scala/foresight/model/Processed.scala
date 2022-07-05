@@ -42,7 +42,8 @@ object Processed {
       maxPriorityFeePerGas: Option[BigDecimal],
       input: String,
       nonce: BigDecimal,
-      transactionIndex: Option[BigDecimal]
+      transactionIndex: Option[BigDecimal],
+      tip: Option[BigDecimal]
   )
   final case class Transactions(items: List[Processed.Transaction])
   object Transaction {
@@ -71,7 +72,8 @@ object Processed {
         transactionIndex = clientTx.transactionIndex.map(_.toBigDecimal),
         transactionType =
           if (clientTx.maxFeePerGas.isDefined) TransactionType.EIP1559
-          else TransactionType.Legacy
+          else TransactionType.Legacy,
+        tip = None
       )
     }
     def fromMined(raw: Raw.MinedTransaction): Transaction = {
@@ -98,7 +100,8 @@ object Processed {
         transactionIndex = clientTx.transactionIndex.map(_.toBigDecimal),
         transactionType =
           if (clientTx.maxFeePerGas.isDefined) TransactionType.EIP1559
-          else TransactionType.Legacy
+          else TransactionType.Legacy,
+        tip = None
       )
     }
   }
