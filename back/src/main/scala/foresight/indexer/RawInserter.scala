@@ -210,7 +210,22 @@ final case class RawInserter(session: SlickSession) {
     )
 
   def getProcessedTransactionQuery =
-    sql"""SELECT 
+    sql"""
+with top_legacy as (select *
+                    from processed_transactions
+                    where mined_at is null
+                      and created_at > now() - interval '3 hours'
+                      and type = 'Legacy'
+                    order by gas_price desc
+                    limit 250),
+     top_eip1559 as (select *
+                     from processed_transactions
+                     where mined_at is null
+                       and created_at > now() - interval '3 hours'
+                       and type = 'EIP1559'
+                     order by gas_price desc
+                     limit 250)
+        SELECT
          hash,
           type,
           block_height,
@@ -232,10 +247,32 @@ final case class RawInserter(session: SlickSession) {
           status,
           tip
          FROM 
-            processed_transactions
-        where mined_at is null and created_at > now() - interval '3 hours'
-        order by gas_price desc
-        limit 500
+            top_eip1559
+UNION ALL
+        SELECT
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          receiver,
+          value,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          transaction_index,
+          value,
+          status,
+          tip
+         FROM
+            top_legacy
+
        """.as(
       GetResult(r =>
         Processed.Transaction(
