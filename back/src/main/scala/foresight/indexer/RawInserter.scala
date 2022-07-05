@@ -233,9 +233,9 @@ final case class RawInserter(session: SlickSession) {
           tip
          FROM 
             processed_transactions
-        WHERE 
-            created_at > NOW() - interval '1 second' OR 
-            mined_at > NOW() - interval '1 second' 
+        where mined_at is null and created_at > now() - interval '3 hours'
+        order by gas_price desc
+        limit 500
        """.as(
       GetResult(r =>
         Processed.Transaction(
