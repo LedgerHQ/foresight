@@ -16,6 +16,7 @@ import common.model._
 import foresight.model._
 import java.sql.Timestamp
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.util._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -71,6 +72,16 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
     subscribe("newHeads")
       .collect { case JRPC.Subscription.Response(_, json: JsObject) =>
         (json.convertTo[ClientHead].hash, Raw.sqlTimestampNow)
+      }
+  }
+
+  def baseFees = {
+    import foresight.model.JsonProtocol._
+    Source
+      .tick(50.millis, 15.seconds, ())
+      .via(getFeeHistory)
+      .collect { case JRPC.Response(_, json: JsObject) =>
+        json.convertTo[ClientFeeHistory]
       }
   }
 
@@ -148,6 +159,46 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
         case (Failure(err), ts) => Future.failed(err)
       }
       .filterNot { case (x, _) => x.result == JsNull }
+  }
+
+  def getFeeHistory = {
+    val co = http.cachedHostConnectionPool[NotUsed](config.httpEndpoint)
+
+    val jrpcRequest = JRPC
+      .Request(
+        id = 0,
+        method = "eth_feeHistory",
+        params = Vector(
+          JsString("0xF"),
+          JsString("latest"),
+          JsArray(Vector.empty)
+        )
+      )
+
+    val httpRequest = HttpRequest()
+      .withMethod(HttpMethods.POST)
+      .withHeaders(Authorization(BasicHttpCredentials(config.httpBasicAuth)))
+      .withEntity(
+        HttpEntity(
+          ContentTypes.`application/json`,
+          jrpcRequest.encode.toString
+        )
+      )
+
+    def decode(res: HttpResponse): Future[JRPC.Response] =
+      Unmarshal(res)
+        .to[JsObject]
+        .map(JRPC.Response.decode)
+        .flatMap(res => Future.fromTry(Try(res)))
+
+    Flow[Unit]
+      .map { case _ => httpRequest -> NotUsed }
+      .via(co)
+      .mapAsync(10) {
+        case (Success(res), ts) => decode(res).map(_ -> ts)
+        case (Failure(err), ts) => Future.failed(err)
+      }
+      .map { case (x, _) => x }
   }
 
 }

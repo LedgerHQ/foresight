@@ -5,9 +5,8 @@ import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl.Flow
 import common.model._
-import foresight.model.Raw.BaseFeeByHeight
 import foresight.model._
-
+import foresight.model.Raw.BaseFeeByHeight
 import scala.concurrent._
 import slick.jdbc.GetResult
 
@@ -108,6 +107,26 @@ final case class RawInserter(session: SlickSession) {
         """
   }
 
+  def updateNextBaseFeeQuery(nextBase: BigDecimal) = {
+    sqlu"""
+          UPDATE processed_transactions
+          SET base_fee = $nextBase
+          WHERE block_height = NULL
+        """
+  }
+
+  def updateBaseFeeBatch(batch: Raw.BaseFeeBatch) = {
+    DBIO
+      .fold(
+        batch.batch.map(updateBaseFeeQuery) ++ Seq(
+          updateNextBaseFeeQuery(batch.nextBase)
+        ),
+        0
+      )(_ + _)
+      .transactionally
+
+  }
+
   def updateDroppedTransactionQuery(raw: Raw.DroppedTransaction) =
     sqlu"""UPDATE raw_transactions
           SET dropped_at = ${raw.droppedAt.value}
@@ -193,7 +212,8 @@ final case class RawInserter(session: SlickSession) {
 
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
 
-  def updateBaseFee(): Flow[BaseFeeByHeight, Int, NotUsed] = Flow[BaseFeeByHeight].via(Slick.flow(updateBaseFeeQuery))
+  def updateBaseFee(): Flow[Raw.BaseFeeBatch, Int, NotUsed] =
+    Flow[Raw.BaseFeeBatch].via(Slick.flow(updateBaseFeeBatch))
 
   def insertTransaction() =
     Flow[Raw.PendingTransaction].via(Slick.flow(insertPendingTransaction))

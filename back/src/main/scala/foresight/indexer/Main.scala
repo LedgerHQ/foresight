@@ -36,7 +36,13 @@ object Indexer {
     val rawInserter = RawInserter(session)
 
     val fetcher = Fetcher(fetcherConfig)
-    new WsServer(rawInserter).wsServer
+
+    fetcher.baseFees
+      .map(Raw.BaseFeeBatch.fromClient)
+      .via(rawInserter.updateBaseFee)
+      .toMat(Sink.ignore)(Keep.both)
+      .run()
+
     fetcher.newHeads
       .via(fetcher.getBlock)
       .map { case (x, ts) =>
@@ -61,5 +67,6 @@ object Indexer {
       .toMat(Sink.ignore)(Keep.both)
       .run()
 
+    new WsServer(rawInserter).wsServer
   }
 }

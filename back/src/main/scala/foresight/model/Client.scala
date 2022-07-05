@@ -43,6 +43,11 @@ case class ClientHead(
     number: HexNumber
 )
 
+case class ClientFeeHistory(
+    oldestBlock: HexNumber,
+    baseFeePerGas: List[HexNumber]
+)
+
 //noinspection TypeAnnotation
 object JsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit object HexNumberFormat extends JsonFormat[HexNumber] {
@@ -110,6 +115,7 @@ object JsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val transactionFormat = jsonFormat13(ClientTransaction)
   implicit val headFormat        = jsonFormat3(ClientHead)
+  implicit val feeHistoryFormat  = jsonFormat2(ClientFeeHistory)
 }
 
 case class HexNumber(value: String) extends AnyVal {

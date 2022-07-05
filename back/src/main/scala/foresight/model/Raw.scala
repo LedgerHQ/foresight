@@ -88,4 +88,18 @@ object Raw {
   }
 
   case class BaseFeeByHeight(height: Height, baseFee: BigDecimal)
+  case class BaseFeeBatch(nextBase: BigDecimal, batch: List[BaseFeeByHeight])
+  object BaseFeeBatch {
+    def fromClient(input: ClientFeeHistory): BaseFeeBatch = {
+      val blockRange =
+        (input.oldestBlock.toBigDecimal.toInt until (input.oldestBlock.toBigDecimal.toInt + 0xf))
+      BaseFeeBatch(
+        input.baseFeePerGas.last.toBigDecimal,
+        (input.baseFeePerGas zip blockRange)
+          .map { case (fee, height) =>
+            BaseFeeByHeight(Height(height.toInt), fee.toBigDecimal)
+          }
+      )
+    }
+  }
 }
