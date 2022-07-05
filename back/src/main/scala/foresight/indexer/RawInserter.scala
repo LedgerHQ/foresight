@@ -53,8 +53,7 @@ final case class RawInserter(session: SlickSession) {
           nonce,
           transaction_index,
           input,
-          value,
-          tip
+          value
         ) VALUES (
           ${processed.hash},
           ${processed.transactionType.value},
@@ -70,8 +69,7 @@ final case class RawInserter(session: SlickSession) {
           ${processed.nonce},
           ${processed.transactionIndex},
           ${processed.input},
-          ${processed.value},
-          ${processed.tip}
+          ${processed.value}
         )"""
   }
 
