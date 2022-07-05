@@ -9,6 +9,7 @@ import akka.util.ByteString
 import common.indexer._
 import common.model.JRPC
 import foresight.indexer._
+import foresight.indexer.server.HttpServer
 import foresight.indexer.server.WsServer
 import foresight.model.Raw
 import java.sql.Timestamp
@@ -44,6 +45,9 @@ object Indexer {
       .toMat(Sink.ignore)(Keep.both)
       .run()
 
+    new WsServer(rawInserter).wsServer
+    new HttpServer(rawInserter).httpServer
+
     fetcher.newHeads
       .via(fetcher.getBlock)
       .map { case (x, ts) =>
@@ -68,6 +72,5 @@ object Indexer {
       .toMat(Sink.ignore)(Keep.both)
       .run()
 
-    new WsServer(rawInserter).wsServer
   }
 }

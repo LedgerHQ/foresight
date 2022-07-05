@@ -154,7 +154,7 @@ final case class RawInserter(session: SlickSession) {
       .transactionally
   }
 
-  def getProcessedTransactionQuery =
+  def getProcessedTransactionByBlockHeightQuery(blockHeight: Int) =
     sql"""SELECT 
          hash,
           type,
@@ -164,22 +164,21 @@ final case class RawInserter(session: SlickSession) {
           dropped_at,
           block_hash,
           sender,
+          receiver,
+          value,
           gas,
           gas_price,
           max_fee_per_gas,
           max_priority_fee_per_gas,
           input,
           nonce,
-          receiver,
           transaction_index,
-          value,
           status,
           tip
          FROM 
             processed_transactions
         WHERE 
-            created_at > NOW() - interval '1 second' OR 
-            mined_at > NOW() - interval '1 second' 
+            block_height = $blockHeight
        """.as(
       GetResult(r =>
         Processed.Transaction(
@@ -203,14 +202,192 @@ final case class RawInserter(session: SlickSession) {
             r.nextStringOption().map(HexNumber(_).toBigDecimal),
           input = r.nextString(),
           nonce = r.nextBigDecimal(),
-          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
           tip = r.nextBigDecimalOption()
         )
       )
     )
 
+  def getProcessedTransactionQuery =
+    sql"""
+with top_legacy as (select *
+                    from processed_transactions
+                    where mined_at is null
+                      and created_at > now() - interval '3 hours'
+                      and type = 'Legacy'
+                    order by gas_price desc
+                    limit 250),
+     top_eip1559 as (select *
+                     from processed_transactions
+                     where mined_at is null
+                       and created_at > now() - interval '3 hours'
+                       and type = 'EIP1559'
+                     order by gas_price desc
+                     limit 250)
+        SELECT
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          receiver,
+          value,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          transaction_index,
+          value,
+          status,
+          tip
+         FROM 
+            top_eip1559
+UNION ALL
+        SELECT
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          receiver,
+          value,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          transaction_index,
+          value,
+          status,
+          tip
+         FROM
+            top_legacy
+
+       """.as(
+      GetResult(r =>
+        Processed.Transaction(
+          hash = r.nextString(),
+          transactionType = r.nextString() match {
+            case "Legacy" => Processed.TransactionType.Legacy
+            case _        => Processed.TransactionType.EIP1559
+          },
+          blockHeight = r.nextIntOption().map(Height(_)),
+          createdAt = r.nextTimestamp(),
+          minedAt = r.nextTimestampOption(),
+          droppedAt = r.nextTimestampOption(),
+          blockHash = r.nextStringOption(),
+          sender = r.nextString(),
+          receiver = r.nextString(),
+          value = r.nextBigDecimal(),
+          gas = r.nextBigDecimal(),
+          gasPrice = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxFeePerGas = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxPriorityFeePerGas =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          input = r.nextString(),
+          nonce = r.nextBigDecimal(),
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          tip = r.nextBigDecimalOption()
+        )
+      )
+    )
+
+  def getMemPoolQuery =
+    sql"""SELECT 
+         count(*)
+         FROM 
+            processed_transactions
+        WHERE 
+             mined_at is null and created_at > now() - interval '3 hours'
+       """.as[Int](
+      GetResult(r => r.nextInt())
+    )
+
+  def getProcessedTransactionByAddressQuery(address: String) =
+    sql"""SELECT
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          receiver,
+          value,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          transaction_index,
+          value,
+          status,
+          tip
+         FROM
+            processed_transactions
+        WHERE
+            (sender = $address OR receiver = $address) AND (
+            created_at > NOW() - interval '5 second' OR
+            mined_at > NOW() - interval '5 second'
+            )
+       """.as(
+      GetResult(r =>
+        Processed.Transaction(
+          hash = r.nextString(),
+          transactionType = r.nextString() match {
+            case "Legacy" => Processed.TransactionType.Legacy
+            case _        => Processed.TransactionType.EIP1559
+          },
+          blockHeight = r.nextIntOption().map(Height(_)),
+          createdAt = r.nextTimestamp(),
+          minedAt = r.nextTimestampOption(),
+          droppedAt = r.nextTimestampOption(),
+          blockHash = r.nextStringOption(),
+          sender = r.nextString(),
+          receiver = r.nextString(),
+          value = r.nextBigDecimal(),
+          gas = r.nextBigDecimal(),
+          gasPrice = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxFeePerGas = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxPriorityFeePerGas =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          input = r.nextString(),
+          nonce = r.nextBigDecimal(),
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          tip = r.nextBigDecimalOption()
+        )
+      )
+    )
+
+  def getProcessedTransactionByAddress(address: String): Future[List[Processed.Transaction]] =
+    session.db.run(getProcessedTransactionByAddressQuery(address)).map(_.toList)
+
   def getProcessedTransaction: Future[List[Processed.Transaction]] =
     session.db.run(getProcessedTransactionQuery).map(_.toList)
+
+  def getMemPool: Future[List[Int]] =
+    session.db.run(getMemPoolQuery).map(_.toList)
+
+  def getProcessedTransactionByBockHeight(
+      blockHeight: Int
+  ): Future[List[Processed.Transaction]] =
+    session.db
+      .run(getProcessedTransactionByBlockHeightQuery(blockHeight))
+      .map(_.toList)
 
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
 
