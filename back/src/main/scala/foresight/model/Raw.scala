@@ -1,12 +1,15 @@
 package foresight.model
 
 import common.model._
-import spray.json._
 import java.sql.Timestamp
 import java.time.Instant
 import scala.util.Try
+import spray.json._
 
 object Raw {
+
+  def sqlTimestampNow: Timestamp =
+    Timestamp.from(Instant.now())
 
   final case class MinedTransaction(
       hash: String,
@@ -61,22 +64,42 @@ object Raw {
   )
 
   object Block {
-    def fromJson(json: JsObject): Try[Block] =
-      json.getFields("number", "timestamp", "transactions") match {
-        case Seq(JsString(n), JsString(unixTimestamp), JsArray(data)) =>
+    def fromJson(json: JsObject, minedAt: Timestamp): Try[Block] =
+      json.getFields("number", "transactions") match {
+        case Seq(JsString(n), JsArray(data)) =>
           for {
-            height <- Try(n.toInt).map(Height.apply)
-            createdAt <- Try(unixTimestamp.toLong)
-              .map(Instant.ofEpochMilli)
-              .map(Timestamp.from)
-          } yield Block(
-            height,
-            createdAt,
-            JsObject(json.fields.removed("transactions")),
-            data.flatMap(js => MinedTransaction.fromJson(js.asJsObject, height, createdAt).toOption)
-          )
+            height <- Try(HexNumber(n).toBigDecimal.toInt)
+              .map(Height.apply)
+          } yield {
+            Block(
+              height,
+              minedAt,
+              JsObject(json.fields.removed("transactions")),
+              data.flatMap(js =>
+                MinedTransaction
+                  .fromJson(js.asJsObject, height, minedAt)
+                  .toOption
+              )
+            )
+          }
         case _ =>
           Try(throw DeserializationException("Fields are missing"))
       }
+  }
+
+  case class BaseFeeByHeight(height: Height, baseFee: BigDecimal)
+  case class BaseFeeBatch(nextBase: BigDecimal, batch: List[BaseFeeByHeight])
+  object BaseFeeBatch {
+    def fromClient(input: ClientFeeHistory): BaseFeeBatch = {
+      val blockRange =
+        (input.oldestBlock.toBigDecimal.toInt until (input.oldestBlock.toBigDecimal.toInt + 0xf))
+      BaseFeeBatch(
+        input.baseFeePerGas.last.toBigDecimal,
+        (input.baseFeePerGas zip blockRange)
+          .map { case (fee, height) =>
+            BaseFeeByHeight(Height(height.toInt), fee.toBigDecimal)
+          }
+      )
+    }
   }
 }
