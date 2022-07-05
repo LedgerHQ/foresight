@@ -36,7 +36,7 @@ object Indexer {
     val rawInserter = RawInserter(session)
 
     val fetcher = Fetcher(fetcherConfig)
-
+    new WsServer(rawInserter).wsServer
     fetcher.newHeads
       .via(fetcher.getBlock)
       .map { case (x, ts) =>
