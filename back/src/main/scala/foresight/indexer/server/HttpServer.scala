@@ -54,7 +54,7 @@ class HttpServer(
   }
 
   val httpServer = Http()
-    .newServerAt("0.0.0.0", 8080)
+    .newServerAt("0.0.0.0", 8082)
     .bind(route)
 
 }
