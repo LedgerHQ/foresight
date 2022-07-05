@@ -7,11 +7,14 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws._
+import akka.http.scaladsl.model.ws.TextMessage.Streamed
+import akka.http.scaladsl.model.ws.TextMessage.Strict
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl._
 import common.Env
 import common.model._
 import foresight.model._
+import java.sql.Timestamp
 import scala.concurrent._
 import scala.util._
 import spray.json._
@@ -26,7 +29,18 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
   val http = Http()
 
   val nodeConnection =
-    http.cachedHostConnectionPool[NotUsed](config.httpEndpoint)
+    http.cachedHostConnectionPool[Timestamp](config.httpEndpoint)
+
+  val messageToJson =
+    Flow[Message]
+      .collectType[TextMessage]
+      .mapAsync(10) {
+        case Streamed(stream) =>
+          stream.runFold(new StringBuilder)(_ append _).map(_.toString())
+        case Strict(text) =>
+          Future.successful(text)
+      }
+      .map(_.parseJson.asJsObject)
 
   def subscribe(topic: String) = {
     val req = JRPC.Request(
@@ -41,7 +55,7 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
       .single(TextMessage(req.encode.toString))
       .concat(Source.maybe)
       .viaMat(wssFlow)(Keep.right)
-      .map(_.asTextMessage.getStrictText.parseJson.asJsObject)
+      .via(messageToJson)
       .drop(1) // Subscription ACK not used
       .map(JRPC.Subscription.decode)
   }
@@ -49,8 +63,54 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
   def newPendingTransactions =
     subscribe("newPendingTransactions")
       .collect { case JRPC.Subscription.Response(_, JsString(str)) =>
-        str
+        (str, Raw.sqlTimestampNow)
       }
+
+  def newHeads = {
+    import foresight.model.JsonProtocol._
+    subscribe("newHeads")
+      .collect { case JRPC.Subscription.Response(_, json: JsObject) =>
+        (json.convertTo[ClientHead].hash, Raw.sqlTimestampNow)
+      }
+  }
+
+  def getBlock = {
+
+    def req(hash: String) = {
+      val jrpcRequest = JRPC
+        .Request(
+          id = 0,
+          method = "eth_getBlockByHash",
+          params = Vector(JsString(hash), JsBoolean(true))
+        )
+
+      HttpRequest()
+        .withMethod(HttpMethods.POST)
+        .withHeaders(Authorization(BasicHttpCredentials(config.httpBasicAuth)))
+        .withEntity(
+          HttpEntity(
+            ContentTypes.`application/json`,
+            jrpcRequest.encode.toString
+          )
+        )
+
+    }
+
+    def decode(res: HttpResponse): Future[JRPC.Response] =
+      Unmarshal(res)
+        .to[JsObject]
+        .map(JRPC.Response.decode)
+        .flatMap(res => Future.fromTry(Try(res)))
+
+    Flow[(String, Timestamp)]
+      .map { case (hash, ts) => req(hash) -> ts }
+      .via(nodeConnection)
+      .mapAsync(10) {
+        case (Success(res), ts) => decode(res).map(_ -> ts)
+        case (Failure(err), ts) => Future.failed(err)
+      }
+      .filterNot { case (x, _) => x.result == JsNull }
+  }
 
   def getTx = {
 
@@ -80,14 +140,14 @@ final case class Fetcher(config: Fetcher.Config)(implicit system: ActorSystem) {
         .map(JRPC.Response.decode)
         .flatMap(res => Future.fromTry(Try(res)))
 
-    Flow[String]
-      .map { hash => req(hash) -> NotUsed }
+    Flow[(String, Timestamp)]
+      .map { case (hash, ts) => req(hash) -> ts }
       .via(nodeConnection)
-      .mapAsync(100) {
-        case (Success(res), _) => decode(res)
-        case (Failure(err), _) => Future.failed(err)
+      .mapAsync(10) {
+        case (Success(res), ts) => decode(res).map(_ -> ts)
+        case (Failure(err), ts) => Future.failed(err)
       }
-      .filterNot(_.result == JsNull)
+      .filterNot { case (x, _) => x.result == JsNull }
   }
 
 }

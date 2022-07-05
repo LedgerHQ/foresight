@@ -37,20 +37,27 @@ object Indexer {
 
     val fetcher = Fetcher(fetcherConfig)
 
-    val (upgraded, done) = fetcher.newPendingTransactions
+    fetcher.newHeads
+      .via(fetcher.getBlock)
+      .map { case (x, ts) =>
+        Raw.Block.fromJson(x.result.asJsObject, ts)
+      }
+      .collect { case Success(block) => block }
+      .via(rawInserter.insertBlock)
+      .log("new blocks")
+      .toMat(Sink.ignore)(Keep.both)
+      .run()
+
+    fetcher.newPendingTransactions
       .via(fetcher.getTx)
-      .map(res =>
-        Raw.PendingTransaction
-          .fromJson(
-            res.result.asJsObject,
-            Timestamp.from(Instant.now())
-          )
-      )
+      .map { case (x, ts) =>
+        Raw.PendingTransaction.fromJson(x.result.asJsObject, ts)
+      }
       .collect { case Success(pending) =>
         pending
       }
       .via(rawInserter.insertTransaction)
-      .log("pending")
+      .log("new pending txs")
       .toMat(Sink.ignore)(Keep.both)
       .run()
 

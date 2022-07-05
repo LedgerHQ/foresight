@@ -1,6 +1,10 @@
 package foresight.model
 
-import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, deserializationError}
+import spray.json.DefaultJsonProtocol
+import spray.json.JsonFormat
+import spray.json.JsString
+import spray.json.JsValue
+import spray.json.deserializationError
 
 case class ClientTransaction(
     hash: String,
@@ -18,6 +22,12 @@ case class ClientTransaction(
     transactionIndex: Option[HexNumber]
 )
 
+case class ClientHead(
+    hash: String,
+    timestamp: HexNumber,
+    number: HexNumber
+)
+
 //noinspection TypeAnnotation
 object JsonProtocol extends DefaultJsonProtocol {
   implicit object HexNumberFormat extends JsonFormat[HexNumber] {
@@ -30,8 +40,10 @@ object JsonProtocol extends DefaultJsonProtocol {
   }
 
   implicit val transactionFormat = jsonFormat13(ClientTransaction)
+  implicit val headFormat        = jsonFormat3(ClientHead)
 }
 
 case class HexNumber(value: String) extends AnyVal {
-  def toBigDecimal: BigDecimal = if (value == "0x") 0 else BigDecimal(BigInt(value.replace("0x", ""), 16))
+  def toBigDecimal: BigDecimal =
+    if (value == "0x") 0 else BigDecimal(BigInt(value.replace("0x", ""), 16))
 }

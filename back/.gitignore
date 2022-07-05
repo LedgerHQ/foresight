@@ -33,3 +33,4 @@ target
 project/*
 !project/build.properties
 !project/plugins.sbt
+*.env

@@ -16,16 +16,21 @@ final case class RawInserter(session: SlickSession) {
   implicit val se = session
 
   def insertHeaderQuery(raw: Raw.Block) =
-    sqlu"""INSERT INTO raw_blocks VALUES (
+    sqlu"""INSERT INTO raw_blocks (height, created_at, data) VALUES (
         ${raw.height.value}, 
-        ${raw.createdAt.value}, 
+        ${raw.createdAt}, 
         ${raw.header.toString()}::jsonb
-        )"""
+        ) ON CONFLICT (height) 
+        DO 
+          UPDATE SET
+          created_at = EXCLUDED.created_at,
+          data = EXCLUDED.data
+          """
 
   def insertRawTransactionQuery(raw: Raw.PendingTransaction) =
     sqlu"""INSERT INTO raw_transactions(hash, created_at, data) VALUES (
-        ${raw.hash.value},
-        ${raw.createdAt.value},
+        ${raw.hash},
+        ${raw.createdAt},
         ${raw.data.toString()}::jsonb
         ) ON CONFLICT (hash) DO NOTHING"""
 
@@ -68,58 +73,23 @@ final case class RawInserter(session: SlickSession) {
 
   def updateMinedTransactionQuery(height: Height)(raw: Raw.MinedTransaction) =
     sqlu"""INSERT INTO raw_transactions(hash, block_height, created_at, mined_at, data) VALUES (
-        ${raw.hash.value},
+        ${raw.hash},
         ${height.value},
-        ${raw.minedAt.value},
-        ${raw.minedAt.value},
+        ${raw.minedAt},
+        ${raw.minedAt},
         ${raw.data.toString()}::jsonb
         ) ON CONFLICT (hash)
         DO
-          UPDATE
-          SET block_height = ${height.value}, mined_at = ${raw.minedAt.value}
-          WHERE hash = ${raw.hash.value}"""
+          UPDATE SET 
+            block_height = ${height.value}, 
+            mined_at = ${raw.minedAt.value}
+          """
 
   def updateMinedProcessedTransactionQuery(
       height: Height
   )(raw: Raw.MinedTransaction) = {
     val processed = Processed.Transaction.fromMined(raw)
-    sqlu"""INSERT INTO processed_transactions(
-          hash,
-          type,
-          created_at,
-          mined_at,
-          block_height,
-          block_hash,
-          sender,
-          receiver,
-          gas,
-          gas_price,
-          max_fee_per_gas,
-          max_priority_fee_per_gas,
-          nonce,
-          transaction_index,
-          input,
-          value
-        ) VALUES (
-          ${processed.hash},
-          ${processed.transactionType.value},
-          ${processed.createdAt},
-          ${processed.minedAt},
-          ${height.value},
-          ${processed.blockHash},
-          ${processed.sender},
-          ${processed.receiver},
-          ${processed.gas},
-          ${processed.gasPrice},
-          ${processed.maxFeePerGas},
-          ${processed.maxPriorityFeePerGas},
-          ${processed.nonce},
-          ${processed.transactionIndex},
-          ${processed.input},
-          ${processed.value}
-        )
-        ON CONFLICT (hash)
-        DO UPDATE
+    sqlu"""UPDATE processed_transactions
             SET block_hash = ${processed.blockHash},
                 mined_at = ${processed.minedAt},
                 block_height = ${processed.blockHeight.map(_.value)}
@@ -130,7 +100,7 @@ final case class RawInserter(session: SlickSession) {
   def updateDroppedTransactionQuery(raw: Raw.DroppedTransaction) =
     sqlu"""UPDATE raw_transactions
           SET dropped_at = ${raw.droppedAt.value}
-          WHERE hash = ${raw.hash.value}"""
+          WHERE hash = ${raw.hash}"""
 
   def insertPendingTransaction(raw: Raw.PendingTransaction) = {
     DBIO
@@ -154,16 +124,9 @@ final case class RawInserter(session: SlickSession) {
       .transactionally
   }
 
-  def topHeightQuery =
-    sql"SELECT height from raw_blocks ORDER BY height desc LIMIT 1"
-      .as(GetResult(r => Height(r.nextInt())))
-      .headOption
-
   def insertBlock() = Flow[Raw.Block].via(Slick.flow(insertBlockQuery))
 
   def insertTransaction() =
     Flow[Raw.PendingTransaction].via(Slick.flow(insertPendingTransaction))
 
-  def topHeight: Future[Option[Height]] =
-    session.db.run(topHeightQuery)
 }
