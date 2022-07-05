@@ -113,8 +113,9 @@ export default function Example({
     if (isNaN(parse)) {
       return 0;
     }
-    return Math.sqrt(parse) / Math.pow(10, 8);
+    return Math.sqrt(parse / Math.pow(10, 8));
   };
+
   const setUpStuff = () => {
     const filteredPlanets = transactionData
       .filter((d) => d.value !== "0" && d.value != null)
@@ -169,7 +170,7 @@ export default function Example({
   };
 
   const [socketUrl, setSocketUrl] = useState(
-    "ws://51.210.220.222/foresight/processed-transactions"
+    "ws://51.210.220.222/foresight/ws/processed-transactions"
   );
   const [transactionData, setTransactionData] = useState<
     TransactionInterface[]
@@ -183,8 +184,8 @@ export default function Example({
         // (t: any) => ({ ...t, value: parseInt(t.value), gas: parseInt(t.gas) })
         (t: any) => ({ ...t })
       );
-      console.log(receivedTransaction);
-      setTransactionData([...transactionData, ...receivedTransaction]);
+      // console.log(receivedTransaction);
+      setTransactionData([...receivedTransaction]);
       setUpStuff();
     }
   }, [lastMessage]);
@@ -194,7 +195,7 @@ export default function Example({
   };
 
   const colorScale = (transactionType: string) => {
-    if (transactionType === "EIP1559") return "yellow";
+    if (transactionType === "EIP1559") return "#FF5300";
     else return "#B1A6F1";
   };
 

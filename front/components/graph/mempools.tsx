@@ -1,17 +1,35 @@
+import { useEffect, useState } from "react";
 import Mempool, { MempoolData } from "./mempool";
 
 const Mempools = () => {
-  const fillingPool = {
+  const [fillingPool, setFillingPool] = useState<MempoolData>({
     id: "1",
     status: "pending",
-    size: 24,
+    size: 40,
     transactionNumber: 2351,
-  } as MempoolData;
+  });
+
+  useEffect(() => {
+    try {
+      fetch("http://51.210.220.222/foresight/api/mempool")
+        .then((data) => {
+          console.log("data");
+          return data.json();
+        })
+        .then((a) => {
+          console.log(a);
+          setFillingPool({ ...fillingPool, transactionNumber: a[0] });
+        })
+        .catch((e) => console.log(e));
+    } catch (e) {
+      console.log(e);
+    }
+  });
 
   const filledMempools = [
-    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
-    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
-    { id: "123432453", status: "complete", size: 87, transactionNumber: 2351 },
+    { id: "123432453", status: "complete", size: 40, transactionNumber: 0 },
+    { id: "123432453", status: "complete", size: 40, transactionNumber: 0 },
+    { id: "123432453", status: "complete", size: 40, transactionNumber: 0 },
   ] as MempoolData[];
 
   return (
