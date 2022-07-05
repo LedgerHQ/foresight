@@ -109,7 +109,7 @@ object JsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
       case _ => deserializationError("String expected")
     }
   }
-  implicit val itemFormat = jsonFormat17(Processed.Transaction.apply)
+  implicit val itemFormat = jsonFormat18(Processed.Transaction.apply)
 
   implicit val orderFormat = jsonFormat1(Transactions.apply)
 

@@ -40,6 +40,7 @@ object Indexer {
     fetcher.baseFees
       .map(Raw.BaseFeeBatch.fromClient)
       .via(rawInserter.updateBaseFee)
+      .log("Base fee")
       .toMat(Sink.ignore)(Keep.both)
       .run()
 
