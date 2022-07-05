@@ -17,8 +17,8 @@ const LoadingState = (mempollData: MempoolData) => {
     <div
       className={`absolute bottom-0 left-0 ${
         status === "complete"
-          ? "bg-gradient-to-t from-[#8CD37E] bg-[#6DC85B]"
-          : "bg-gradient-to-tr from-base via-indigo-400 to-[#6DC85B] background-animate"
+          ? "bg-[#86BF69]"
+          : "bg-gradient-to-tr from-[#B1A6F1] via-indigo-400 to-[#7367C3] background-animate"
       }  w-full`}
       style={{ height: `${size}%` }}
     ></div>
@@ -37,7 +37,7 @@ const MemPool = ({ mempollData }: Props) => {
 
       <div
         className={`h-48 w-48 rounded bg-black flex jutify-center items-center text-center  ${
-          status === "complete" ? "border-[#6DC85B]" : "border-base"
+          status === "complete" ? "border-[#86BF69]" : "border-base"
         } border relative`}
       >
         <div className="text-xs font-medium rounded-sm text-blue-100  w-full text-center p-0.5 leading-none z-10 ">

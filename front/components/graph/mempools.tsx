@@ -15,11 +15,11 @@ const Mempools = () => {
   ] as MempoolData[];
 
   return (
-    <div className="flex flex-row justify-center divide-x-2 divide-gray-400 divide-dashed py-8">
-      <div className="flex-1 flex justify-end pr-4 py-8">
+    <div className="flex flex-col justify-center divide-y-2 divide-gray-400 divide-dashed py-8">
+      <div className="flex-1 flex justify-end  py-8">
         <Mempool mempollData={fillingPool} />
       </div>
-      <div className="flex flex-row gap-4 flex-1 pl-4 py-8">
+      <div className="flex flex-col gap-4 flex-1 pl-4 py-8">
         {filledMempools.map((m, index) => (
           <Mempool key={index} mempollData={m} />
         ))}

@@ -2,13 +2,6 @@ import { useRef, useEffect, useState, Children } from "react";
 import * as d3 from "d3";
 import * as toPushData from "../../data/data";
 
-export interface TransactionInterface {
-  transactionId: string;
-  value: number;
-  fee: number;
-  feeRate: number;
-  virtualSize: number;
-}
 export default function MemPoolTreemap({ width, height }: any) {
   const tmpList = [];
   const [data, setData] = useState<{
@@ -25,8 +18,6 @@ export default function MemPoolTreemap({ width, height }: any) {
       let tmp = toPushData.default.children[0].children.slice(0, i);
       if (tmp) {
         const chidldData = data?.children;
-        console.log("chidldData", chidldData);
-        console.log("tmp", tmp);
 
         setData({
           name: "Celtics",
@@ -44,8 +35,6 @@ export default function MemPoolTreemap({ width, height }: any) {
             },
           ],
         });
-        console.log(data);
-        // renderTreemap();
         i++;
       }
       if (i > 5) i = 0;

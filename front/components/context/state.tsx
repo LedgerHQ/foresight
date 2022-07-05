@@ -10,13 +10,14 @@ import {
 } from "react";
 import { WindowMessageTransport } from "@ledgerhq/live-app-sdk";
 import LedgerLiveApi from "@ledgerhq/live-app-sdk";
+import { TransactionInterface } from "../graph/Treemap-visx";
 
 type memPoolContextType = {
   llapi?: LedgerLiveApi;
   selectedMemPool: string | null;
   setMemPoolCode: Dispatch<SetStateAction<string | null>>;
-  selectedTransaction: string | null;
-  setTransaction: Dispatch<SetStateAction<string | null>>;
+  selectedTransaction: TransactionInterface | null;
+  setTransaction: Dispatch<SetStateAction<TransactionInterface | null>>;
 };
 
 const MemPoolContextDefaultValues: memPoolContextType = {
@@ -43,7 +44,8 @@ export function MemPoolProvider({ children }: Props) {
   const [loading, setLoading] = useState(false);
   const [llapi, setllapi] = useState<LedgerLiveApi>();
   const [selectedMemPool, setMemPoolCode] = useState<string | null>(null);
-  const [selectedTransaction, setTransaction] = useState<string | null>(null);
+  const [selectedTransaction, setTransaction] =
+    useState<TransactionInterface | null>(null);
 
   // Client-side-only code
   useEffect(() => {
