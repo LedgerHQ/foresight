@@ -53,7 +53,8 @@ final case class RawInserter(session: SlickSession) {
           nonce,
           transaction_index,
           input,
-          value
+          value,
+          tip
         ) VALUES (
           ${processed.hash},
           ${processed.transactionType.value},
@@ -69,7 +70,8 @@ final case class RawInserter(session: SlickSession) {
           ${processed.nonce},
           ${processed.transactionIndex},
           ${processed.input},
-          ${processed.value}
+          ${processed.value},
+          ${processed.tip}
         )"""
   }
 
@@ -164,16 +166,17 @@ final case class RawInserter(session: SlickSession) {
           dropped_at,
           block_hash,
           sender,
+          receiver,
+          value,
           gas,
           gas_price,
           max_fee_per_gas,
           max_priority_fee_per_gas,
           input,
           nonce,
-          receiver,
           transaction_index,
-          value,
-          status
+          status,
+          tip
          FROM 
             processed_transactions
         WHERE 
@@ -201,7 +204,9 @@ final case class RawInserter(session: SlickSession) {
             r.nextStringOption().map(HexNumber(_).toBigDecimal),
           input = r.nextString(),
           nonce = r.nextBigDecimal(),
-          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal)
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          tip = r.nextBigDecimalOption()
         )
       )
     )
@@ -216,13 +221,14 @@ final case class RawInserter(session: SlickSession) {
           dropped_at,
           block_hash,
           sender,
+          receiver,
+          value,
           gas,
           gas_price,
           max_fee_per_gas,
           max_priority_fee_per_gas,
           input,
           nonce,
-          receiver,
           transaction_index,
           value,
           status,
@@ -255,14 +261,29 @@ final case class RawInserter(session: SlickSession) {
             r.nextStringOption().map(HexNumber(_).toBigDecimal),
           input = r.nextString(),
           nonce = r.nextBigDecimal(),
-          transactionIndex = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
           tip = r.nextBigDecimalOption()
         )
       )
     )
 
+  def getMemPoolQuery =
+    sql"""SELECT 
+         count(*)
+         FROM 
+            processed_transactions
+        WHERE 
+             mined_at is null and created_at > now() - interval '3 hours'
+       """.as[Int](
+      GetResult(r => r.nextInt())
+    )
+
   def getProcessedTransaction: Future[List[Processed.Transaction]] =
     session.db.run(getProcessedTransactionQuery).map(_.toList)
+
+  def getMemPool: Future[List[Int]] =
+    session.db.run(getMemPoolQuery).map(_.toList)
 
   def getProcessedTransactionByBockHeight(
       blockHeight: Int

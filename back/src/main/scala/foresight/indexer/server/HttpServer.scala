@@ -33,15 +33,24 @@ class HttpServer(
     rawInserter: RawInserter
 )(implicit system: ActorSystem) {
 
-  val route = pathPrefix("processed-transactions" / IntNumber) { blockHeight =>
-    onComplete(
-      rawInserter
-        .getProcessedTransactionByBockHeight(blockHeight)
-    ) {
-      case Success(value) => complete(value)
-      case Failure(ex)    => complete(s"An error occurred: ${ex.getMessage}")
-    }
-
+  val route = {
+    pathPrefix("processed-transactions" / IntNumber) { blockHeight =>
+      onComplete(
+        rawInserter
+          .getProcessedTransactionByBockHeight(blockHeight)
+      ) {
+        case Success(value) => complete(value)
+        case Failure(ex)    => complete(s"An error occurred: ${ex.getMessage}")
+      }
+    } ~
+      path("mempool") {
+        onComplete(
+          rawInserter.getMemPool
+        ) {
+          case Success(value) => complete(value)
+          case Failure(ex) => complete(s"An error occurred: ${ex.getMessage}")
+        }
+      }
   }
 
   val httpServer = Http()
