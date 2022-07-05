@@ -43,7 +43,7 @@ class WsServer(
     }
   }
   val wsServer = Http()
-    .newServerAt("127.0.0.1", 8081)
+    .newServerAt("0.0.0.0", 8081)
     .adaptSettings(
       _.mapWebsocketSettings(
         _.withPeriodicKeepAliveData(() => ByteString("toto"))
