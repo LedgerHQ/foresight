@@ -25,6 +25,18 @@ class WsServer(
     rawInserter: RawInserter
 )(implicit system: ActorSystem) {
 
+  def webSocketSubscriptionService(address: String) =
+    Flow.fromSinkAndSource(
+      Sink.ignore,
+      Source
+        .tick(50.millis, 5.seconds, ())
+        .mapAsync(4)(_ =>
+          rawInserter.getProcessedTransactionByAddress(address).map(t =>
+            TextMessage(t.toJson.toString)
+          )
+        )
+    )
+
   val webSocketService =
     Flow.fromSinkAndSource(
       Sink.ignore,
@@ -41,7 +53,14 @@ class WsServer(
     Directives.get {
       handleWebSocketMessages(webSocketService)
     }
+  } ~ path("subscribe") {
+    parameters("address") { address =>
+      Directives.get {
+        handleWebSocketMessages(webSocketSubscriptionService(address))
+      }
+    }
   }
+
   val wsServer = Http()
     .newServerAt("0.0.0.0", 8081)
     .adaptSettings(

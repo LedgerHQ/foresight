@@ -277,6 +277,68 @@ final case class RawInserter(session: SlickSession) {
       GetResult(r => r.nextInt())
     )
 
+  def getProcessedTransactionByAddressQuery(address: String) =
+    sql"""SELECT
+         hash,
+          type,
+          block_height,
+          created_at,
+          mined_at,
+          dropped_at,
+          block_hash,
+          sender,
+          receiver,
+          value,
+          gas,
+          gas_price,
+          max_fee_per_gas,
+          max_priority_fee_per_gas,
+          input,
+          nonce,
+          transaction_index,
+          value,
+          status,
+          tip
+         FROM
+            processed_transactions
+        WHERE
+            (sender = $address OR receiver = $address) AND (
+            created_at > NOW() - interval '5 second' OR
+            mined_at > NOW() - interval '5 second'
+            )
+       """.as(
+      GetResult(r =>
+        Processed.Transaction(
+          hash = r.nextString(),
+          transactionType = r.nextString() match {
+            case "Legacy" => Processed.TransactionType.Legacy
+            case _        => Processed.TransactionType.EIP1559
+          },
+          blockHeight = r.nextIntOption().map(Height(_)),
+          createdAt = r.nextTimestamp(),
+          minedAt = r.nextTimestampOption(),
+          droppedAt = r.nextTimestampOption(),
+          blockHash = r.nextStringOption(),
+          sender = r.nextString(),
+          receiver = r.nextString(),
+          value = r.nextBigDecimal(),
+          gas = r.nextBigDecimal(),
+          gasPrice = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxFeePerGas = r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          maxPriorityFeePerGas =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          input = r.nextString(),
+          nonce = r.nextBigDecimal(),
+          transactionIndex =
+            r.nextStringOption().map(HexNumber(_).toBigDecimal),
+          tip = r.nextBigDecimalOption()
+        )
+      )
+    )
+
+  def getProcessedTransactionByAddress(address: String): Future[List[Processed.Transaction]] =
+    session.db.run(getProcessedTransactionByAddressQuery(address)).map(_.toList)
+
   def getProcessedTransaction: Future[List[Processed.Transaction]] =
     session.db.run(getProcessedTransactionQuery).map(_.toList)
 
